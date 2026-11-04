@@ -1,0 +1,131 @@
+{
+  "loja": {
+    "nome": "Brasa & Pão",
+    "slogan": "Hambúrguer na brasa, entregue quente",
+    "whatsapp": "5521999999999",
+    "endereco": "Rua Voluntários da Pátria, 100 — Botafogo, Rio de Janeiro",
+    "lat": -22.9519,
+    "lng": -43.1857,
+    "tempoPreparo": "35–50 min",
+    "pedidoMinimo": 30
+  },
+  "pix": {
+    "chave": "pagamentos@brasaepao.com.br",
+    "nomeRecebedor": "BRASA E PAO",
+    "cidade": "RIO DE JANEIRO"
+  },
+  "pagamento": { "pix": true, "cartao": true },
+  "entrega": {
+    "ativa": true,
+    "retirada": true,
+    "fatorRua": 1.3,
+    "faixas": [
+      { "ateKm": 2, "valor": 6 },
+      { "ateKm": 4, "valor": 9 },
+      { "ateKm": 6, "valor": 12 },
+      { "ateKm": 8, "valor": 15 },
+      { "ateKm": 10, "valor": 19 }
+    ]
+  },
+  "horarios": {
+    "0": ["10:00", "23:59"],
+    "1": ["10:00", "23:59"],
+    "2": ["10:00", "23:59"],
+    "3": ["10:00", "23:59"],
+    "4": ["10:00", "23:59"],
+    "5": ["10:00", "23:59"],
+    "6": ["10:00", "23:59"]
+  },
+  "cupons": {
+    "PRIMEIRA10": { "tipo": "percentual", "valor": 10 },
+    "FRETEGRATIS": { "tipo": "frete", "valor": 0 }
+  },
+  "categorias": [
+    {
+      "nome": "Mais pedidos",
+      "itens": [
+        {
+          "id": "smash-duplo",
+          "nome": "Smash Duplo",
+          "descricao": "Dois blends de 90g prensados na chapa, cheddar inglês, cebola caramelizada e molho da casa no pão brioche.",
+          "preco": 36.9,
+          "imagem": "",
+          "opcoes": [
+            { "titulo": "Ponto da carne", "obrigatorio": true, "max": 1, "itens": [
+              { "nome": "Ao ponto", "preco": 0 }, { "nome": "Bem passado", "preco": 0 } ] },
+            { "titulo": "Turbine seu burger", "obrigatorio": false, "max": 4, "itens": [
+              { "nome": "Bacon crocante", "preco": 5 }, { "nome": "Carne extra 90g", "preco": 9 },
+              { "nome": "Ovo", "preco": 3 }, { "nome": "Cheddar extra", "preco": 4 } ] }
+          ]
+        },
+        {
+          "id": "combo-brasa",
+          "nome": "Combo Brasa",
+          "descricao": "Brasa Clássico + batata rústica média + refrigerante lata. O pedido mais saído da casa.",
+          "preco": 49.9,
+          "imagem": "",
+          "opcoes": [
+            { "titulo": "Bebida", "obrigatorio": true, "max": 1, "itens": [
+              { "nome": "Coca-Cola", "preco": 0 }, { "nome": "Coca Zero", "preco": 0 },
+              { "nome": "Guaraná", "preco": 0 }, { "nome": "Suco de limão (+R$ 4)", "preco": 4 } ] }
+          ]
+        }
+      ]
+    },
+    {
+      "nome": "Burgers",
+      "itens": [
+        {
+          "id": "brasa-classico",
+          "nome": "Brasa Clássico",
+          "descricao": "Blend de 160g na brasa, queijo prato, alface, tomate e maionese defumada.",
+          "preco": 32.9,
+          "imagem": "",
+          "opcoes": [
+            { "titulo": "Ponto da carne", "obrigatorio": true, "max": 1, "itens": [
+              { "nome": "Mal passado", "preco": 0 }, { "nome": "Ao ponto", "preco": 0 }, { "nome": "Bem passado", "preco": 0 } ] },
+            { "titulo": "Turbine seu burger", "obrigatorio": false, "max": 3, "itens": [
+              { "nome": "Bacon crocante", "preco": 5 }, { "nome": "Ovo", "preco": 3 }, { "nome": "Cheddar extra", "preco": 4 } ] }
+          ]
+        },
+        {
+          "id": "gorgonzola",
+          "nome": "Gorgonzola & Mel",
+          "descricao": "Blend de 160g, creme de gorgonzola, rúcula e fio de mel com pimenta.",
+          "preco": 38.9,
+          "imagem": "",
+          "opcoes": [
+            { "titulo": "Ponto da carne", "obrigatorio": true, "max": 1, "itens": [
+              { "nome": "Mal passado", "preco": 0 }, { "nome": "Ao ponto", "preco": 0 }, { "nome": "Bem passado", "preco": 0 } ] }
+          ]
+        },
+        {
+          "id": "veggie",
+          "nome": "Brasa Veggie",
+          "descricao": "Burger de grão-de-bico e cogumelos, queijo coalho grelhado e chutney de tomate.",
+          "preco": 31.9,
+          "imagem": "",
+          "opcoes": []
+        }
+      ]
+    },
+    {
+      "nome": "Acompanhamentos",
+      "itens": [
+        { "id": "batata", "nome": "Batata rústica", "descricao": "Com alecrim e páprica defumada. Serve 1 a 2 pessoas.", "preco": 16.9, "imagem": "",
+          "opcoes": [ { "titulo": "Molho", "obrigatorio": false, "max": 2, "itens": [
+            { "nome": "Maionese defumada", "preco": 3 }, { "nome": "Cheddar cremoso", "preco": 4 } ] } ] },
+        { "id": "onion", "nome": "Onion rings", "descricao": "8 anéis empanados na cerveja com molho barbecue.", "preco": 19.9, "imagem": "", "opcoes": [] }
+      ]
+    },
+    {
+      "nome": "Bebidas",
+      "itens": [
+        { "id": "refri", "nome": "Refrigerante lata", "descricao": "350ml.", "preco": 7, "imagem": "",
+          "opcoes": [ { "titulo": "Sabor", "obrigatorio": true, "max": 1, "itens": [
+            { "nome": "Coca-Cola", "preco": 0 }, { "nome": "Coca Zero", "preco": 0 }, { "nome": "Guaraná", "preco": 0 } ] } ] },
+        { "id": "suco", "nome": "Suco de limão", "descricao": "Feito na hora, 400ml.", "preco": 11, "imagem": "", "opcoes": [] }
+      ]
+    }
+  ]
+}
