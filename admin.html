@@ -240,7 +240,12 @@ function entrega(){
   </section>`;
 }
 function loja(){
-  return `<section class="card"><h2 style="font-size:18px">Loja</h2>
+  if(!A.cfg.tema) A.cfg.tema={cor:'#C8336E'};
+  return `<section class="card"><h2 style="font-size:18px">Aparência</h2>
+    <div class="field"><label for="f-cor">Cor principal da loja</label>
+      <div style="display:flex;gap:10px;align-items:center"><input id="f-cor" type="color" data-k="tema.cor" value="${esc(A.cfg.tema.cor)}" style="width:56px;height:44px;padding:4px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg)">
+      <span class="hint">Usada no logo, botões, títulos e destaques. Prefira um tom forte para o texto branco dos botões ficar legível.</span></div></div></section>
+  <section class="card"><h2 style="font-size:18px">Loja</h2>
     ${inp('loja.nome','Nome')}${inp('loja.slogan','Frase de apresentação')}
     ${inp('loja.whatsapp','WhatsApp que recebe os pedidos',{ph:'5521999999999',hint:'55 + DDD + número, só os números.'})}
     <div class="grid2">${inp('loja.tempoPreparo','Tempo de entrega',{ph:'35–50 min'})}${inp('loja.pedidoMinimo','Pedido mínimo',{t:'n',pre:'R$'})}</div>
