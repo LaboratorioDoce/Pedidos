@@ -3,8 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="logo.png">
 <style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
-<title>Brasa & Pão Painel</title>
+<title>Laboratório Doce Painel</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <meta name="robots" content="noindex">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -13,18 +14,18 @@
 /* Layout: painel de gestão em coluna única (máx. 760px), abas fixas no topo, barra de publicação fixa embaixo */
 :root{
   --bg:#F5F6F2; --surface:#FFFFFF; --ink:#1B1F1A; --muted:#666D63; --line:#E2E5DE;
-  --accent:#1E6A44; --accent-ink:#FFFFFF; --accent-soft:#E2EEE6; --warn:#A8501C; --warn-soft:#F7E9DF;
+  --accent:#B8204F; --accent-ink:#FFFFFF; --accent-soft:#FBE9E7; --warn:#A8501C; --warn-soft:#F7E9DF;
   --plate:#EEF1EA; --shadow:0 10px 30px rgba(20,35,25,.12);
   --display:"Bricolage Grotesque","Figtree",system-ui,sans-serif;
   --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
 }
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
   --bg:#111410; --surface:#1A1E19; --ink:#ECEFE8; --muted:#9CA396; --line:#2B3029;
-  --accent:#4DB47D; --accent-ink:#0B1A11; --accent-soft:#1D3227; --warn:#E39A66; --warn-soft:#352419;
+  --accent:#F07AA0; --accent-ink:#2A0A15; --accent-soft:#3A1824; --warn:#E39A66; --warn-soft:#352419;
   --plate:#232822; --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark}}
 :root[data-theme="dark"]{
   --bg:#111410; --surface:#1A1E19; --ink:#ECEFE8; --muted:#9CA396; --line:#2B3029;
-  --accent:#4DB47D; --accent-ink:#0B1A11; --accent-soft:#1D3227; --warn:#E39A66; --warn-soft:#352419;
+  --accent:#F07AA0; --accent-ink:#2A0A15; --accent-soft:#3A1824; --warn:#E39A66; --warn-soft:#352419;
   --plate:#232822; --shadow:0 10px 30px rgba(0,0,0,.45); color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
@@ -240,8 +241,11 @@ function entrega(){
   </section>`;
 }
 function loja(){
-  if(!A.cfg.tema) A.cfg.tema={cor:'#C8336E'};
+  if(!A.cfg.tema) A.cfg.tema={cor:'#B8204F'};
+  const logoSrc = A.cfg.loja.logo===''?'':(A.fotos[A.cfg.loja.logo]?.data || A.cfg.loja.logo || 'logo.png');
   return `<section class="card"><h2 style="font-size:18px">Aparência</h2>
+    <div class="photo"><div class="thumb" style="border-radius:50%">${logoSrc?`<img src="${esc(logoSrc)}" alt="Logo atual" onerror="this.remove()">`:esc(A.cfg.loja.nome[0])}</div>
+      <div class="photo-actions"><button class="btn" data-do="logo">Trocar logo</button><span class="hint">Imagem quadrada; aparece em círculo no topo da loja.</span></div></div>
     <div class="field"><label for="f-cor">Cor principal da loja</label>
       <div style="display:flex;gap:10px;align-items:center"><input id="f-cor" type="color" data-k="tema.cor" value="${esc(A.cfg.tema.cor)}" style="width:56px;height:44px;padding:4px;border:1.5px solid var(--line);border-radius:12px;background:var(--bg)">
       <span class="hint">Usada no logo, botões, títulos e destaques. Prefira um tom forte para o texto branco dos botões ficar legível.</span></div></div></section>
@@ -276,7 +280,7 @@ function horarios(){
 }
 
 /* ---------- Editor de produto ---------- */
-let edit = null;
+let edit = null, alvo = '';
 function editor(){
   const {ci,ii} = edit, it = A.cfg.categorias[ci].itens[ii], base = `categorias.${ci}.itens.${ii}`;
   const scr = $('.sheet-body')?.scrollTop || 0;
@@ -315,7 +319,15 @@ function slug(s){ return s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()
 
 /* Foto: corta quadrado no centro, 800px, JPEG ~120 KB */
 $('#file').onchange = async e=>{
-  const f = e.target.files[0]; e.target.value=''; if(!f||!edit) return;
+  const f = e.target.files[0]; e.target.value=''; if(!f) return;
+  if(alvo==='logo'){ alvo='';
+    const im = await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=URL.createObjectURL(f); });
+    const q = Math.min(im.width,im.height), cv=document.createElement('canvas'); cv.width=cv.height=400;
+    cv.getContext('2d').drawImage(im,(im.width-q)/2,(im.height-q)/2,q,q,0,0,400,400);
+    const lp = `fotos/logo-${Date.now().toString(36)}.png`;
+    if(A.fotos[A.cfg.loja.logo]) delete A.fotos[A.cfg.loja.logo];
+    A.fotos[lp]={path:lp,data:cv.toDataURL('image/png')}; A.cfg.loja.logo=lp; sujo(); render(); return; }
+  if(!edit) return;
   const img = await new Promise((ok,no)=>{ const i=new Image(); i.onload=()=>ok(i); i.onerror=no; i.src=URL.createObjectURL(f); });
   const s = Math.min(img.width,img.height), c = document.createElement('canvas'); c.width=c.height=800;
   c.getContext('2d').drawImage(img,(img.width-s)/2,(img.height-s)/2,s,s,0,0,800,800);
@@ -329,7 +341,8 @@ $('#file').onchange = async e=>{
 const acoes = {
   editar:d=>{ edit={ci:+d.ci,ii:+d.ii}; editor(); },
   fecharEditor:()=>{ $('#sheet').innerHTML=''; edit=null; document.body.style.overflow=''; render(); },
-  foto:()=>$('#file').click(),
+  foto:()=>{ alvo='item'; $('#file').click(); },
+  logo:()=>{ alvo='logo'; $('#file').click(); },
   semFoto:()=>{ const it=itemAtual(); delete A.fotos[it.imagem]; it.imagem=''; sujo(); editor(); },
   novoItem:d=>{ const c=A.cfg.categorias[+d.ci]; c.itens.push({id:'p-'+Date.now().toString(36),nome:'Novo produto',descricao:'',preco:0,imagem:'',disponivel:true,opcoes:[]}); sujo(); render(); edit={ci:+d.ci,ii:c.itens.length-1}; editor(); },
   apagarItem:()=>{ const b=document.querySelector('[data-do="apagarItem"]');

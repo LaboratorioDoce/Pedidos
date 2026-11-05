@@ -3,19 +3,20 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="icon" href="logo.png">
 <style>[hidden]{display:none!important}body{margin:0}img{max-width:100%}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}</style>
-<title>Brasa & Pão Pedidos</title>
+<title>Laboratório Doce Pedidos</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght,SOFT@9..144,600..800,100&family=Figtree:wght@400;500;600;700&display=swap">
 <style>
 /* Visual de confeitaria: branco com rosa da marca (cor vem do painel). Layout: coluna única de app (máx. 640px), cabeçalho da loja, chips de categoria fixos, sacola flutuante e painéis que sobem de baixo */
 :root{
-  --accent:#C8336E;
-  --bg:#FFFFFF; --surface:#FFFFFF; --ink:#2B1A22; --muted:#7D6670; --line:#F2DCE5;
-  --accent-ink:#FFFFFF; --accent-soft:color-mix(in srgb,var(--accent) 10%,#FFFFFF);
-  --warn:#B4441B; --warn-soft:#FBEAE2;
-  --plate:color-mix(in srgb,var(--accent) 7%,#FFFFFF); --qr:#FFFFFF; --shadow:0 10px 30px color-mix(in srgb,var(--accent) 22%,transparent);
+  --accent:#B8204F;
+  --bg:#FFF8F7; --surface:#FFFFFF; --ink:#3A1622; --muted:#85636D; --line:#F3DADD;
+  --accent-ink:#FFFFFF; --accent-soft:color-mix(in srgb,var(--accent) 9%,#FFFFFF);
+  --warn:#A9441B; --warn-soft:#FBEAE2;
+  --plate:#FBE9E7; --qr:#FFFFFF; --shadow:0 10px 30px color-mix(in srgb,var(--accent) 22%,transparent);
   --display:"Fraunces", Georgia, serif;
   --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
   color-scheme:light;
@@ -30,8 +31,9 @@ button{cursor:pointer}
 
 /* Loja */
 .store{padding-block:28px 18px;display:grid;gap:14px}
+.logo img{width:100%;height:100%;object-fit:cover;display:block}
 .brand{display:flex;gap:14px;align-items:center}
-.logo{width:58px;height:58px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:22px;flex:none}
+.logo{width:76px;height:76px;border-radius:50%;overflow:hidden;box-shadow:0 0 0 3px var(--surface),0 0 0 4px var(--line);background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-family:var(--display);font-weight:800;font-size:22px;flex:none}
 .brand h1{font-family:var(--display);font-weight:700;font-variation-settings:'SOFT' 100;font-size:28px;line-height:1.05;margin:0;letter-spacing:-.02em;text-wrap:balance}
 .brand p{margin:3px 0 0;color:var(--muted)}
 .facts{display:flex;flex-wrap:wrap;gap:8px}
@@ -176,6 +178,7 @@ async function boot(){
   try{ const saved = JSON.parse(localStorage.getItem('sacola')||'null'); if(saved) S.cart = saved; }catch(e){}
   if(S.cfg.tema && /^#[0-9a-f]{6}$/i.test(S.cfg.tema.cor)) document.documentElement.style.setProperty('--accent', S.cfg.tema.cor);
   if(!S.cfg.entrega.ativa) S.modo='retirada';
+  document.title = S.cfg.loja.nome + ' · Pedidos';
   renderStore(); renderMenu(); renderBag();
   const q = new URLSearchParams(location.search);
   if(q.get('status')) voltaMercadoPago(q.get('status'), q.get('pedido'));
@@ -196,7 +199,7 @@ function iniciais(n){ return n.split(/\s+/).filter(w=>w.length>2||w==='&').slice
 function renderStore(){
   const L = S.cfg.loja, st = statusLoja(), faixas = S.cfg.entrega.faixas;
   $('#store').innerHTML = `
-    <div class="brand"><div class="logo">${esc(iniciais(L.nome))}</div>
+    <div class="brand"><div class="logo">${L.logo!==''?`<img src="${esc(L.logo||'logo.png')}" alt="" onerror="this.replaceWith(document.createTextNode('${esc(iniciais(L.nome))}'))">`:esc(iniciais(L.nome))}</div>
       <div><h1>${esc(L.nome)}</h1><p>${esc(L.slogan)}</p></div></div>
     <div class="facts">
       <span class="fact ${st.aberta?'':'closed'}"><span class="dot"></span>${st.texto}</span>
