@@ -67,6 +67,7 @@ main{padding-bottom:120px}
 .plate:has(img)::after{display:none}
 .item:hover h3{color:var(--accent)}
 .item.off{cursor:default}.item.off .plate,.item.off h3,.item.off .desc{opacity:.45}.item.off:hover h3{color:inherit}
+.few{font-size:12px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:2px 7px;border-radius:6px;margin-right:4px}
 .soldout{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--warn);background:var(--warn-soft);padding:2px 7px;border-radius:6px;margin-right:4px}
 
 /* Sacola flutuante */
@@ -168,14 +169,16 @@ a.cta{text-decoration:none;justify-content:center}
 const $ = s => document.querySelector(s);
 const brl = v => v.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 const esc = s => String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const S = { cfg:null, cart:[], modo:'entrega', cep:'', geo:null, km:null, frete:null, fora:false, demo:false,
+const S = { cfg:null, estoque:null, cart:[], modo:'entrega', cep:'', geo:null, km:null, frete:null, fora:false, demo:false,
   pag:'pix', cupom:null, cliente:{nome:'',tel:'',numero:'',compl:'',obs:''} };
 
 /* ---------- Carregamento ---------- */
 async function boot(){
   S.cfg = await fetch('config.json?v='+Date.now()).then(r=>r.json());
-  S.cart = S.cart.filter(l=>{ const it=acharItem(l.id); return it && it.disponivel!==false; });
   try{ const saved = JSON.parse(localStorage.getItem('sacola')||'null'); if(saved) S.cart = saved; }catch(e){}
+  await carregarEstoque();
+  S.cart = S.cart.filter(l=>{ const it=acharItem(l.id); return it && !esgotado(it); });
+  ajustarSacola();
   if(S.cfg.tema && /^#[0-9a-f]{6}$/i.test(S.cfg.tema.cor)) document.documentElement.style.setProperty('--accent', S.cfg.tema.cor);
   if(!S.cfg.entrega.ativa) S.modo='retirada';
   document.title = S.cfg.loja.nome + ' · Pedidos';
@@ -184,6 +187,21 @@ async function boot(){
   if(q.get('status')) voltaMercadoPago(q.get('status'), q.get('pedido'));
 }
 function save(){ try{ localStorage.setItem('sacola', JSON.stringify(S.cart)); }catch(e){} }
+
+/* ---------- Estoque ---------- */
+async function carregarEstoque(){
+  try{ const r = await fetch('/api/estoque?t='+Date.now(),{cache:'no-store'}); if(!r.ok) throw 0; S.estoque = (await r.json()).estoque || {}; }
+  catch(e){ if(!S.estoque) S.estoque = null; }
+}
+const disp = id => S.estoque && S.estoque[id]!=null ? S.estoque[id] : Infinity;
+const naSacola = (id, menos=-1) => S.cart.reduce((s,l,i)=>s+(l.id===id && i!==menos ? l.qtd : 0),0);
+const esgotado = it => it.disponivel===false || disp(it.id)<=0;
+function ajustarSacola(){ // corta quantidades acima do estoque; devolve nomes ajustados
+  const ajustados = [];
+  for(const l of S.cart){ const sobra = disp(l.id) - naSacola(l.id) + l.qtd;
+    if(l.qtd > sobra){ l.qtd = Math.max(0, sobra); ajustados.push(l.nome); } }
+  S.cart = S.cart.filter(l=>l.qtd>0); save(); return ajustados;
+}
 
 /* ---------- Horário ---------- */
 function statusLoja(){
@@ -212,9 +230,9 @@ function renderMenu(){
   const cats = S.cfg.categorias;
   $('#cats').innerHTML = cats.map((c,i)=>`<button class="chip" data-cat="${i}" aria-current="${i===0}">${esc(c.nome)}</button>`).join('');
   $('#menu').innerHTML = cats.map((c,i)=>`<section class="cat" id="cat-${i}"><h2>${esc(c.nome)}</h2>
-    ${c.itens.map(it=>`<button class="item ${it.disponivel===false?'off':''}" data-id="${it.id}" ${it.disponivel===false?'disabled':''}>
+    ${c.itens.map(it=>`<button class="item ${esgotado(it)?'off':''}" data-id="${it.id}" ${esgotado(it)?'disabled':''}>
       <div class="txt"><h3>${esc(it.nome)}</h3><div class="desc">${esc(it.descricao)}</div>
-      <div class="price num">${it.disponivel===false?'<span class="soldout">Esgotado</span> ':''}${it.opcoes.some(o=>o.obrigatorio&&o.itens.some(x=>x.preco>0))?'A partir de ':''}${brl(it.preco)}</div></div>
+      <div class="price num">${esgotado(it)?'<span class="soldout">Esgotado</span> ':(disp(it.id)<=5?`<span class="few">Restam ${disp(it.id)}</span> `:'')}${it.opcoes.some(o=>o.obrigatorio&&o.itens.some(x=>x.preco>0))?'A partir de ':''}${brl(it.preco)}</div></div>
       ${plate(it)}</button>`).join('')}</section>`).join('')
     + `<p class="demo">Pedido feito direto com a loja · pagamento seguro por Pix ou cartão</p>`;
   document.querySelectorAll('.chip').forEach(b=>b.onclick=()=>document.getElementById('cat-'+b.dataset.cat).scrollIntoView({behavior:'smooth'}));
@@ -253,11 +271,13 @@ function abrirProduto(id){
   const upd = ()=>{ $('#qv').textContent=qtd; $('#addBtn').innerHTML=`<span>Adicionar</span><span class="num">${brl(unit()*qtd)}</span>`; };
   document.querySelectorAll('.group').forEach(gEl=>{ const g = it.opcoes[gEl.dataset.g];
     gEl.addEventListener('change',e=>{ if(g.max>1){ const on=gEl.querySelectorAll('input:checked'); if(on.length>g.max) e.target.checked=false; } upd(); }); });
-  $('#qm').onclick=()=>{ if(qtd>1){qtd--;upd();} }; $('#qp').onclick=()=>{qtd++;upd();};
+  $('#qm').onclick=()=>{ if(qtd>1){qtd--;upd();} }; $('#qp').onclick=()=>{ const max = disp(it.id) - naSacola(it.id);
+    if(qtd < max){ qtd++; upd(); } else { const e=$('#perr'); e.textContent = max>0 ? `Temos só ${max} disponíve${max>1?'is':'l'} agora.` : 'Você já colocou todo o estoque deste item na sacola.'; e.hidden=false; } };
   $('#addBtn').onclick=()=>{
     const sel = escolhas(), falta = it.opcoes.findIndex((g,gi)=>g.obrigatorio && !sel[gi].length);
     if(falta>=0){ const e=$('#perr'); e.textContent=`Escolha uma opção em “${it.opcoes[falta].titulo}”.`; e.hidden=false;
       document.querySelector(`.group[data-g="${falta}"]`).scrollIntoView({behavior:'smooth',block:'center'}); return; }
+    if(qtd > disp(it.id) - naSacola(it.id)){ const e=$('#perr'); e.textContent='Esse item acabou de esgotar ou já está todo na sacola.'; e.hidden=false; return; }
     const opcoes = sel.flatMap((s,gi)=>s.map(oi=>({grupo:it.opcoes[gi].titulo, nome:it.opcoes[gi].itens[oi].nome})));
     S.cart.push({id:it.id, nome:it.nome, qtd, unit:unit(), opcoes, obs:$('#pobs').value.trim()});
     save(); renderBag(); fechar();
@@ -383,6 +403,14 @@ function notaFrete(){
 
 /* ---------- Finalizar ---------- */
 function codigoPedido(){ const a='ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; return Array.from({length:5},()=>a[Math.floor(Math.random()*a.length)]).join(''); }
+async function baixarEstoque(p){ // true = descontado, false = faltou, null = sem conexão (segue)
+  try{ const r = await fetch('/api/estoque',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({acao:'baixar', itens:p.itens.map(l=>({id:l.id,qtd:l.qtd}))})});
+    const d = await r.json().catch(()=>({})); if(d.estoque) S.estoque = d.estoque;
+    if(r.status===409){ ajustarSacola(); renderBag(); return false; }
+    return r.ok ? true : null;
+  }catch(e){ return null; }
+}
 function erro(msg){ const e=$('#ckerr'); e.textContent=msg; e.hidden=false; }
 async function finalizar(){
   lerCampos(); $('#ckerr').hidden=true;
@@ -396,7 +424,16 @@ async function finalizar(){
   if(cl.tel.replace(/\D/g,'').length<10) return erro('Informe um WhatsApp com DDD.');
   const pedido = { id:codigoPedido(), itens:S.cart, modo:S.modo, cep:S.cep, geo:S.geo, km:S.km, cliente:{...cl}, pag:S.pag, cupom:S.cupom, valores:v, demo:S.demo };
   try{ sessionStorage.setItem('pedido', JSON.stringify(pedido)); }catch(e){}
-  if(S.pag==='pix') return telaPix(pedido);
+  $('#finBtn').disabled=true;
+  await carregarEstoque();
+  const cortados = ajustarSacola();
+  if(cortados.length){ renderBag(); renderMenu(); pintarCheckout(); return erro(`O estoque mudou: ajustamos ${cortados.join(', ')}. Confira a sacola.`); }
+  if(S.pag==='pix'){
+    const b = await baixarEstoque(pedido);
+    if(b===false){ renderMenu(); pintarCheckout(); return erro('Um item acabou de esgotar. Confira a sacola.'); }
+    pedido.baixado = true; try{ sessionStorage.setItem('pedido', JSON.stringify(pedido)); }catch(e){}
+    return telaPix(pedido);
+  }
   $('#finBtn').disabled=true; $('#finBtn').innerHTML='<span>Abrindo pagamento seguro…</span>';
   try{
     const r = await fetch('/api/checkout',{method:'POST',headers:{'Content-Type':'application/json'},
@@ -466,7 +503,9 @@ function voltaMercadoPago(status){
   let p=null; try{ p=JSON.parse(sessionStorage.getItem('pedido')||'null'); }catch(e){}
   history.replaceState(null,'',location.pathname);
   if(!p) return;
-  if(status==='approved'){ sucesso(p); return; }
+  if(status==='approved'){
+    if(!p.baixado){ p.baixado=true; try{ sessionStorage.setItem('pedido', JSON.stringify(p)); }catch(e){} baixarEstoque(p).then(()=>renderMenu()); }
+    sucesso(p); return; }
   sheet(`<div class="sheet-body"><div class="center" style="padding-block:20px">
     <p class="big">${status==='pending'?'Pagamento em análise':'Pagamento não aprovado'}</p>
     <p class="pdesc">${status==='pending'?'Assim que o Mercado Pago aprovar, a loja recebe seu pedido.':'Nada foi cobrado. Sua sacola continua salva: tente outro cartão ou pague com Pix.'}</p>

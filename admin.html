@@ -77,6 +77,9 @@ main{padding-block:20px 130px;display:grid;gap:18px}
 .switch input::after{content:"";position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:var(--surface);transition:transform .15s}
 .switch input:checked{background:var(--accent)}
 .switch input:checked::after{transform:translateX(16px)}
+.estq{display:grid;gap:2px;justify-items:center;flex:none}
+.estq label{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+.estq input{width:64px;text-align:center;padding:7px 6px}
 .add{border:1.5px dashed var(--line);background:transparent;border-radius:12px;padding:12px;font-weight:600;color:var(--accent);width:100%}
 .add:hover{border-color:var(--accent)}
 
@@ -140,7 +143,7 @@ main{padding-block:20px 130px;display:grid;gap:18px}
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const brl = v=>(+v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-const A = { cfg:null, senha:'', aba:'cardapio', dirty:false, fotos:{}, previa:false, salvando:false, msg:'' };
+const A = { est:{}, estDirty:false, cfgDirty:false, cfg:null, senha:'', aba:'cardapio', dirty:false, fotos:{}, previa:false, salvando:false, msg:'' };
 const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 
 /* ---------- Login ---------- */
@@ -162,6 +165,7 @@ function telaLogin(erro=''){
 }
 async function carregar(){
   A.cfg = await fetch('config.json?v='+Date.now()).then(r=>r.json());
+  try{ const r = await fetch('/api/estoque?t='+Date.now(),{cache:'no-store'}); if(r.ok) A.est = (await r.json()).estoque || {}; }catch(_){}
   A.cfg.categorias.forEach(c=>c.itens.forEach(it=>{ if(it.disponivel===undefined) it.disponivel=true; }));
   render();
 }
@@ -184,7 +188,8 @@ function render(){
   ligarCampos($('#app'));
   scrollTo(0,y);
 }
-function sujo(){ A.dirty=true; A.msg=''; const p=document.querySelector('.pub'); if(p){ p.classList.add('dirty'); $('#pubmsg').textContent='Alterações não publicadas'; $('#pubBtn').disabled=false; } }
+function sujo(){ A.cfgDirty=true; marcar(); }
+function marcar(){ A.dirty=true; A.msg=''; const p=document.querySelector('.pub'); if(p){ p.classList.add('dirty'); $('#pubmsg').textContent='Alterações não publicadas'; $('#pubBtn').disabled=false; } }
 
 /* Campos ligados ao config: data-k="caminho.no.config", data-t="n" para número */
 function pegar(path){ return path.split('.').reduce((o,k)=>o?.[k], A.cfg); }
@@ -200,6 +205,10 @@ function ligarCampos(root){
       if(el.dataset.re) render();
     });
   });
+  root.querySelectorAll('[data-est]').forEach(el=>el.addEventListener('input',()=>{
+    const v = el.value.replace(/\D/g,''); el.value = v;
+    if(v==='') delete A.est[el.dataset.est]; else A.est[el.dataset.est] = parseInt(v,10);
+    A.estDirty = true; marcar(); }));
   root.querySelectorAll('[data-do]').forEach(el=>el.addEventListener('click',e=>{ e.preventDefault(); acoes[el.dataset.do](el.dataset); }));
 }
 const inp = (k,label,{t='',ph='',pre='',type='text',hint=''}={})=>`<div class="field"><label for="f-${k}">${label}</label>
@@ -218,11 +227,13 @@ function cardapio(){
     <div>${c.itens.map((it,ii)=>`<div class="prod ${it.disponivel?'':'off'}">
       ${thumb(it)}
       <button class="info" data-do="editar" data-ci="${ci}" data-ii="${ii}"><b>${esc(it.nome)}</b><span class="num">${brl(it.preco)}${it.opcoes.length?` · ${it.opcoes.length} grupo${it.opcoes.length>1?'s':''} de opções`:''}</span></button>
+      <div class="estq"><label for="e-${esc(it.id)}">Estoque</label><input class="mini num" id="e-${esc(it.id)}" data-est="${esc(it.id)}" inputmode="numeric" placeholder="∞" value="${A.est[it.id]??''}"></div>
       <label class="switch"><input type="checkbox" data-k="categorias.${ci}.itens.${ii}.disponivel" data-re="1" ${it.disponivel?'checked':''}>${it.disponivel?'Ativo':'Esgotado'}</label>
     </div>`).join('')}</div>
     <button class="add" data-do="novoItem" data-ci="${ci}">+ Adicionar produto em ${esc(c.nome)}</button>
   </section>`).join('') + `<button class="add" data-do="novaCat">+ Nova categoria</button>
-  <p class="hint">Toque em um produto para editar foto, descrição, preço e adicionais. Use “Esgotado” para pausar sem apagar.</p>`;
+  <p class="hint">Toque em um produto para editar foto, descrição, preço e adicionais. Use “Esgotado” para pausar sem apagar.</p>
+  <p class="hint"><b>Estoque:</b> digite quantas unidades você tem. A loja desconta sozinha a cada venda e mostra “Esgotado” ao zerar. Deixe vazio (∞) para não controlar. Mudanças de estoque valem na hora, sem esperar a loja republicar.</p>`;
 }
 function entrega(){
   const E = A.cfg.entrega;
@@ -369,13 +380,22 @@ const acoes = {
 async function publicar(){
   A.cfg.entrega.faixas.sort((a,b)=>a.ateKm-b.ateKm);
   A.cfg.categorias.forEach(c=>c.itens.forEach(it=>it.opcoes=it.opcoes.filter(g=>g.titulo.trim()).map(g=>({...g,max:Math.max(1,g.max||1),itens:g.itens.filter(o=>o.nome.trim())}))));
-  if(A.previa){ A.dirty=false; A.msg='Pré-visualização: nada foi gravado'; render(); return; }
+  if(A.previa){ A.dirty=A.cfgDirty=A.estDirty=false; A.msg='Pré-visualização: nada foi gravado'; render(); return; }
   A.salvando=true; render();
   try{
-    const r = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','x-senha':A.senha},
-      body:JSON.stringify({acao:'salvar',config:A.cfg,fotos:Object.values(A.fotos)})});
-    const d = await r.json(); if(!r.ok) throw new Error(d.erro||'Falha ao publicar');
-    A.fotos={}; A.dirty=false; A.msg='Publicado. A loja atualiza em cerca de 1 minuto';
+    if(A.estDirty){
+      const r = await fetch('/api/estoque',{method:'POST',headers:{'Content-Type':'application/json','x-senha':A.senha},
+        body:JSON.stringify({acao:'definir',estoque:A.est})});
+      const d = await r.json(); if(!r.ok) throw new Error(d.erro||'Falha ao salvar o estoque');
+      A.est = d.estoque; A.estDirty=false; A.msg='Estoque salvo. Já vale na loja';
+    }
+    if(A.cfgDirty){
+      const r = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','x-senha':A.senha},
+        body:JSON.stringify({acao:'salvar',config:A.cfg,fotos:Object.values(A.fotos)})});
+      const d = await r.json(); if(!r.ok) throw new Error(d.erro||'Falha ao publicar');
+      A.fotos={}; A.cfgDirty=false; A.msg='Publicado. A loja atualiza em cerca de 1 minuto';
+    }
+    A.dirty=false;
   }catch(e){ A.msg = e.message; }
   A.salvando=false; render();
 }
