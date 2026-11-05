@@ -84,19 +84,7 @@
           "preco": 52,
           "imagem": "fotos/caixa-de-brigadeiros-gourmet-mw2v6smc.jpg",
           "disponivel": true,
-          "opcoes": [
-            {
-              "titulo": "Sabores",
-              "obrigatorio": true,
-              "max": 1,
-              "itens": [
-                {
-                  "nome": "Ninho com Morangos ",
-                  "preco": 52
-                }
-              ]
-            }
-          ]
+          "opcoes": []
         },
         {
           "id": "fatia-red-velvet",
