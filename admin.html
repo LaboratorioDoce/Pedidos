@@ -147,6 +147,19 @@ const A = { est:{}, estDirty:false, cfgDirty:false, cfg:null, senha:'', aba:'car
 const DIAS = ['Domingo','Segunda','Terça','Quarta','Quinta','Sexta','Sábado'];
 
 /* ---------- Login ---------- */
+const ehPrevia = ()=> location.protocol==='file:' || /claude\.ai|anthropic|claudeusercontent/.test(location.host);
+async function testar(senha){ // 'ok' | 'senha' | mensagem de erro; ativa a demonstração só fora do site real
+  try{
+    const r = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','x-senha':senha},body:JSON.stringify({acao:'login'})});
+    if(r.status===401) return 'senha';
+    if(r.ok) return 'ok';
+    if(ehPrevia()){ A.previa=true; return ''; }
+    return `O servidor do painel não respondeu (erro ${r.status}). Confira se o último deploy na Netlify terminou como Published.`;
+  }catch(_){
+    if(ehPrevia()){ A.previa=true; return ''; }
+    return 'Sem conexão com o servidor do painel. Verifique a internet e tente de novo.';
+  }
+}
 function telaLogin(erro=''){
   $('#app').innerHTML = `<div class="wrap login"><form id="lf">
     <h1>Painel da loja</h1><p>Edite cardápio, preços, fotos e entrega. As mudanças vão para o ar ao publicar.</p>
@@ -154,11 +167,9 @@ function telaLogin(erro=''){
     ${erro?`<p class="err">${esc(erro)}</p>`:''}
     <button class="btn primary" type="submit">Entrar</button></form></div>`;
   $('#lf').onsubmit = async e=>{ e.preventDefault(); const s=$('#senha').value;
-    try{
-      const r = await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','x-senha':s},body:JSON.stringify({acao:'login'})});
-      if(r.status===401) return telaLogin('Senha incorreta.');
-      if(!r.ok) throw 0;
-    }catch(_){ A.previa = true; }
+    const t = await testar(s);
+    if(t==='senha') return telaLogin('Senha incorreta.');
+    if(t && t!=='ok') return telaLogin(t);
     A.senha = s; try{ sessionStorage.setItem('senha',s); }catch(_){}
     await carregar();
   };
@@ -404,8 +415,9 @@ window.addEventListener('beforeunload',e=>{ if(A.dirty){ e.preventDefault(); e.r
 document.body.insertAdjacentHTML('beforeend','<div id="sheet"></div>');
 (async()=>{ let s=''; try{ s=sessionStorage.getItem('senha')||''; }catch(_){}
   if(!s) return telaLogin();
-  try{ const r=await fetch('/api/admin',{method:'POST',headers:{'Content-Type':'application/json','x-senha':s},body:JSON.stringify({acao:'login'})});
-    if(r.status===401) return telaLogin(); if(!r.ok) throw 0; }catch(_){ A.previa=true; }
+  const t = await testar(s);
+  if(t==='senha') return telaLogin();
+  if(t && t!=='ok') return telaLogin(t);
   A.senha=s; carregar(); })();
 </script>
 
