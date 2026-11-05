@@ -2,10 +2,10 @@
   "loja": {
     "nome": "Laboratório Doce",
     "slogan": "Confeitaria artesanal, feita com carinho",
-    "whatsapp": "5521999999999",
-    "endereco": "Rua Voluntários da Pátria, 100 — Botafogo, Rio de Janeiro",
-    "lat": -22.9519,
-    "lng": -43.1857,
+    "whatsapp": "5521976201746",
+    "endereco": "Travessa Umbelina - N° 465 Santa Catarina ",
+    "lat": -22.8372793,
+    "lng": -43.0587697,
     "tempoPreparo": "40–60 min",
     "pedidoMinimo": 25,
     "logo": "logo.png"
@@ -17,7 +17,7 @@
   },
   "pagamento": {
     "pix": true,
-    "cartao": true
+    "cartao": false
   },
   "entrega": {
     "ativa": true,
@@ -48,40 +48,31 @@
   },
   "horarios": {
     "0": [
-      "10:00",
-      "23:59"
-    ],
-    "1": [
-      "10:00",
-      "23:59"
+      "13:00",
+      "22:00"
     ],
     "2": [
-      "10:00",
-      "23:59"
+      "13:00",
+      "22:00"
     ],
     "3": [
-      "10:00",
-      "23:59"
+      "13:00",
+      "22:00"
     ],
     "4": [
-      "10:00",
-      "23:59"
+      "13:00",
+      "22:00"
     ],
     "5": [
-      "10:00",
-      "23:59"
+      "13:00",
+      "22:00"
     ],
     "6": [
-      "10:00",
-      "23:59"
+      "13:00",
+      "22:00"
     ]
   },
-  "cupons": {
-    "PRIMEIRA10": {
-      "tipo": "percentual",
-      "valor": 10
-    }
-  },
+  "cupons": {},
   "categorias": [
     {
       "nome": "Mais pedidos",
